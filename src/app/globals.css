@@ -1,0 +1,930 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-paars: #2E0832;
+  --color-ink: #1A0525;
+  --color-bg-dark: #0F0318;
+  --color-goud: #C9A84C;
+  --color-goud-soft: #D8BE7E;
+  --color-creme: #FAF8F2;
+  --color-zand: #F5F0E6;
+  --color-accent-purple: #8B6FA0;
+  --color-disc-d: #B03A2E;
+  --color-disc-i: #B7770D;
+  --color-disc-s: #1E8449;
+  --color-disc-c: #1A5276;
+  /* Couture editorial: Fraunces voor display + body (variable, opticale sizes),
+     Manrope voor UI/labels/CTA (clean utility sans). */
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-ui: "Manrope", system-ui, -apple-system, sans-serif;
+  --font-body: "Fraunces", Georgia, "Times New Roman", serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom cursor actief — verberg systeem-cursor op desktop */
+@media (pointer: fine) {
+  body { cursor: none; }
+  a, button, [role="button"], label, input, textarea, select { cursor: none; }
+}
+
+/* Apple-stijl: warm off-white als basis — donkere secties hebben eigen background inline. */
+body {
+  background: #FAFAF8;
+  color: #1A1A1A;
+  font-family: var(--font-ui), system-ui, -apple-system, sans-serif;
+  font-weight: 400;
+  line-height: 1.5;
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "kern", "liga", "calt";
+}
+
+::selection {
+  background: rgba(201, 168, 76, 0.25);
+  color: #0F0318;
+}
+
+/* Schuine sectie-overgang (navy → crème). */
+.diag-bottom { clip-path: polygon(0 0, 100% 0, 100% calc(100% - 64px), 0 100%); }
+.diag-top { clip-path: polygon(0 64px, 100% 0, 100% 100%, 0 100%); }
+
+/* ============================================================
+   BEWEGENDE ELEMENTEN
+   ============================================================ */
+
+/* Entree-animaties (initiële page-load, boven de vouw). */
+@keyframes vq-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.vq-rise   { animation: vq-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.vq-rise-2 { animation: vq-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.14s both; }
+.vq-rise-3 { animation: vq-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.28s both; }
+.vq-rise-4 { animation: vq-rise 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.42s both; }
+
+/* Scroll-reveal (via IntersectionObserver → .is-visible). */
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+.reveal.is-visible { opacity: 1; transform: none; }
+
+/* Drijvende gradient-"blobs" in de hero. */
+@keyframes vq-blob-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%      { transform: translate3d(6%, -8%, 0) scale(1.12); }
+}
+@keyframes vq-blob-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.05); }
+  50%      { transform: translate3d(-7%, 6%, 0) scale(0.92); }
+}
+.vq-blob-a { animation: vq-blob-a 18s ease-in-out infinite; }
+.vq-blob-b { animation: vq-blob-b 22s ease-in-out infinite; }
+
+/* Zwevende goud-deeltjes. */
+@keyframes vq-float {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50%      { transform: translateY(-22px); opacity: 1; }
+}
+.vq-float { animation: vq-float 7s ease-in-out infinite; }
+
+/* Oplichtende goud-shimmer over tekst. */
+@keyframes vq-shimmer {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.vq-shimmer {
+  background: linear-gradient(100deg, #C9A84C 0%, #F3E2B0 25%, #C9A84C 50%, #C9A84C 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: vq-shimmer 6s linear infinite;
+}
+
+/* Marquee — oneindige tekstband. */
+@keyframes vq-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.vq-marquee-track {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: vq-marquee 30s linear infinite;
+}
+.vq-marquee:hover .vq-marquee-track,
+.vq-marquee:focus-within .vq-marquee-track { animation-play-state: paused; }
+
+/* Lijn die "intekent". */
+@keyframes vq-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.vq-draw { transform-origin: left; animation: vq-draw 1s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Zachte puls (scroll-cue, dots). */
+@keyframes vq-pulse { 0%,100% { opacity: 0.35; } 50% { opacity: 1; } }
+.vq-pulse { animation: vq-pulse 2.4s ease-in-out infinite; }
+
+/* Scroll-cue muis. */
+@keyframes vq-scroll-dot { 0% { transform: translateY(0); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(14px); opacity: 0; } }
+.vq-scroll-dot { animation: vq-scroll-dot 1.8s ease-in-out infinite; }
+
+/* Hover-lift voor kaarten. */
+.vq-lift { transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s ease, border-color 0.4s ease; cursor: pointer; }
+.vq-lift:hover { transform: translateY(-6px); box-shadow: 0 24px 60px -24px rgba(0,0,0,0.6); border-color: rgba(201,168,76,0.55); }
+
+/* Knop met arrow-nudge. */
+.vq-cta-arrow { display: inline-block; transition: transform 0.3s ease; }
+.group:hover .vq-cta-arrow, .vq-cta:hover .vq-cta-arrow { transform: translateX(5px); }
+
+/* Korrel/grain-textuur (premium). */
+.vq-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Nav-link met intekenende goud-onderlijn. */
+.nav-link { position: relative; }
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: -6px;
+  width: 100%; height: 1.5px;
+  background: #C9A84C;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav-link:hover::after { transform: scaleX(1); }
+
+/* Scroll-aware header. */
+.site-header { transition: background 0.4s ease, box-shadow 0.4s ease, height 0.4s ease; }
+
+/* Toegankelijkheid: respecteer prefers-reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
+
+/* Toetsenbord-focus: zichtbaar maar passend in het goud-merk.
+   :focus:not(:focus-visible) verwijdert de ring bij muis-klik maar
+   behoudt hem voor toetsenbord-navigatie (WCAG 2.4.7). */
+:focus:not(:focus-visible) { outline: none; }
+:focus-visible {
+  outline: 2px solid #C9A84C;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+.vq-cta:focus-visible {
+  outline-offset: 4px;
+  box-shadow: 0 0 0 1px rgba(15,3,24,0.9);
+}
+
+/* Cijfers in vaste kolombreedte (prijzen, statistieken). */
+.tabular { font-variant-numeric: tabular-nums lining-nums; }
+.text-goud { font-variant-numeric: tabular-nums lining-nums; }
+
+/* ============================================================
+   3D CARD-FLIP (productkaarten)
+   ============================================================ */
+.vq-card-3d {
+  perspective: 1000px;
+  cursor: pointer;
+}
+.vq-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-style: preserve-3d;
+}
+.vq-card-3d:hover .vq-card-inner,
+.vq-card-3d:focus-within .vq-card-inner {
+  transform: rotateY(180deg);
+}
+.vq-card-front,
+.vq-card-back {
+  position: absolute;
+  inset: 0;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.vq-card-back {
+  transform: rotateY(180deg);
+}
+
+/* ============================================================
+   IJSBERG-ANIMATIE (DISC boven / Systemisch onder water)
+   ============================================================ */
+@keyframes vq-waterline {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(-8px); }
+}
+.vq-waterline-wave {
+  animation: vq-waterline 4s ease-in-out infinite;
+}
+
+@keyframes vq-iceberg-rise {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.vq-iceberg-reveal {
+  animation: vq-iceberg-rise 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Parallax-tekst in hero (3D diepte bij scroll). */
+.vq-parallax-deep {
+  will-change: transform;
+}
+
+/* Floating gouden orbs in de hero. */
+@keyframes vq-orb-a {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.18; }
+  33%      { transform: translate3d(20px, -30px, 0) scale(1.08); opacity: 0.28; }
+  66%      { transform: translate3d(-15px, 10px, 0) scale(0.96); opacity: 0.22; }
+}
+@keyframes vq-orb-b {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.04); opacity: 0.14; }
+  40%      { transform: translate3d(-25px, 20px, 0) scale(0.94); opacity: 0.24; }
+  80%      { transform: translate3d(18px, -15px, 0) scale(1.1); opacity: 0.18; }
+}
+@keyframes vq-orb-c {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(0.98); opacity: 0.12; }
+  50%      { transform: translate3d(12px, 25px, 0) scale(1.05); opacity: 0.20; }
+}
+.vq-orb-a { animation: vq-orb-a 14s ease-in-out infinite; }
+.vq-orb-b { animation: vq-orb-b 18s ease-in-out infinite; }
+.vq-orb-c { animation: vq-orb-c 22s ease-in-out infinite; }
+
+/* Light-mode vq-lift (lichtere shadow op witte achtergrond). */
+.vq-lift-light {
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s ease, border-color 0.4s ease;
+  cursor: pointer;
+}
+.vq-lift-light:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 56px -16px rgba(15,3,24,0.12), 0 0 0 1px rgba(201,168,76,0.2);
+}
+
+/* Skip-to-content link (a11y) — onzichtbaar tot keyboard-focus.
+   Clip-path techniek werkt ook met body { overflow-x: hidden }. */
+.vq-skip {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.vq-skip:focus {
+  position: fixed;
+  top: 16px; left: 16px;
+  width: auto; height: auto;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  z-index: 200;
+  background: #C9A84C;
+  color: #0F0318;
+  padding: 12px 18px;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  outline: 2px solid #0F0318;
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   ICEBERG-ANIMATIE — Apple-niveau scroll-storytelling
+   ============================================================ */
+
+/* Root wrapper */
+.vq-iceberg-root {
+  width: 100%;
+}
+
+/* Scene container */
+.vq-ib-scene {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* SVG canvas */
+.vq-ib-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 4px;
+  overflow: visible;
+}
+
+/* Achtergrond aura */
+.vq-ib-aura {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  background: radial-gradient(ellipse at 50% 38%, rgba(201,168,76,0.08) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── KEYFRAMES ── */
+
+@keyframes vq-ib-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes vq-ib-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes vq-ib-fade-right {
+  from { opacity: 0; transform: translateX(-18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes vq-ib-scale-in {
+  from { opacity: 0; transform: scale(0.80); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes vq-ib-aura-pulse {
+  0%   { opacity: 0; }
+  40%  { opacity: 1; }
+  70%  { opacity: 0.6; }
+  100% { opacity: 0.8; }
+}
+
+@keyframes vq-ib-waterline-glow {
+  0%   { opacity: 0; }
+  30%  { opacity: 1; filter: drop-shadow(0 0 8px #F3E2B0) drop-shadow(0 0 16px #C9A84C); }
+  60%  { opacity: 0.6; filter: drop-shadow(0 0 4px #C9A84C); }
+  100% { opacity: 0.85; }
+}
+
+@keyframes vq-ib-flash {
+  0%   { opacity: 0; }
+  10%  { opacity: 0.55; filter: blur(6px); }
+  30%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes vq-ib-top-reveal {
+  from { opacity: 0; transform: translateY(12px) scaleY(0.94); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes vq-ib-under-reveal {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes vq-ib-star {
+  0%   { opacity: 0; }
+  50%  { opacity: 0.85; }
+  100% { opacity: 0.4; }
+}
+
+/* Klassen die animatiename koppelen */
+.vq-ib-top-reveal    { animation: vq-ib-top-reveal   0.9s cubic-bezier(0.16,1,0.3,1) 0.5s both; }
+.vq-ib-under-reveal  { animation: vq-ib-under-reveal  1.2s ease 1.9s both; }
+.vq-ib-waterline-glow{ animation: vq-ib-waterline-glow 2s ease 1.5s both; }
+.vq-ib-flash         { animation: vq-ib-flash 0.9s ease 1.55s both; }
+.vq-ib-star          { animation: vq-ib-star 2s ease-in-out both; }
+
+/* ── LABEL-OVERLAY ── */
+/* Labels zijn absoluut gepositioneerd t.o.v. .vq-ib-scene */
+
+.vq-ib-labels-top {
+  position: absolute;
+  top: 0;
+  left: -220px;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 12%;
+  pointer-events: none;
+}
+
+.vq-ib-labels-bottom {
+  position: absolute;
+  top: 38.3%; /* net onder de waterline (268/700 = 38.3%) */
+  right: -220px;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 16px;
+  pointer-events: none;
+}
+
+/* Zone-header label */
+.vq-ib-zone-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  animation-duration: 0.8s;
+  animation-timing-function: cubic-bezier(0.16,1,0.3,1);
+  animation-fill-mode: both;
+}
+
+.vq-ib-zone-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.vq-ib-zone-dot--gold   { background: #C9A84C; box-shadow: 0 0 6px rgba(201,168,76,0.8); }
+.vq-ib-zone-dot--purple { background: #8B6FA0; box-shadow: 0 0 6px rgba(139,111,160,0.7); }
+
+.vq-ib-zone-text {
+  font-family: var(--font-ui);
+  font-size: 0.58rem;
+  letter-spacing: 0.20em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #C9A84C;
+}
+
+.vq-ib-zone-text--dim {
+  color: rgba(139,111,160,0.85);
+}
+
+/* Individual labels */
+.vq-ib-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  animation-duration: 0.7s;
+  animation-timing-function: cubic-bezier(0.16,1,0.3,1);
+  animation-fill-mode: both;
+}
+
+.vq-ib-label-line {
+  width: 24px;
+  height: 1px;
+  background: rgba(201,168,76,0.55);
+  flex-shrink: 0;
+  margin-top: 7px;
+}
+.vq-ib-label-line--dim {
+  background: rgba(139,111,160,0.40);
+}
+
+.vq-ib-label-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vq-ib-label-title {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(242,237,227,0.92);
+  line-height: 1.2;
+}
+.vq-ib-label-title--dim {
+  color: rgba(180,200,220,0.78);
+}
+
+.vq-ib-label-sub {
+  font-family: var(--font-ui);
+  font-size: 0.60rem;
+  color: rgba(201,168,76,0.60);
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+}
+.vq-ib-label-sub--dim {
+  color: rgba(139,111,160,0.55);
+}
+
+/* Waterline badge */
+.vq-ib-waterline-badge {
+  position: absolute;
+  left: 50%;
+  top: 37.5%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.16,1,0.3,1);
+  animation-fill-mode: both;
+}
+
+.vq-ib-badge-text {
+  font-family: var(--font-ui);
+  font-size: 0.52rem;
+  letter-spacing: 0.22em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: rgba(201,168,76,0.75);
+  background: rgba(15,3,24,0.7);
+  padding: 3px 8px;
+  border-radius: 2px;
+  border: 1px solid rgba(201,168,76,0.20);
+  white-space: nowrap;
+}
+
+.vq-ib-badge-line {
+  height: 1px;
+  width: 40px;
+  background: linear-gradient(90deg, rgba(201,168,76,0.6), transparent);
+}
+
+/* Grootte-indicator */
+.vq-ib-size-hint {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  animation-duration: 0.8s;
+  animation-timing-function: cubic-bezier(0.16,1,0.3,1);
+  animation-fill-mode: both;
+}
+
+.vq-ib-size-svg {
+  width: 16px;
+  height: 40px;
+}
+
+.vq-ib-size-label {
+  font-family: var(--font-ui);
+  font-size: 0.52rem;
+  color: rgba(201,168,76,0.55);
+  writing-mode: vertical-rl;
+  letter-spacing: 0.10em;
+  white-space: nowrap;
+}
+
+/* ── TOELICHTING ONDER ── */
+.vq-ib-caption {
+  margin-top: 56px;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.vq-ib-caption-grid {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  gap: 36px;
+  align-items: start;
+}
+
+.vq-ib-caption-col {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.vq-ib-caption-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.vq-ib-caption-dot--gold   { background: #C9A84C; box-shadow: 0 0 8px rgba(201,168,76,0.5); }
+.vq-ib-caption-dot--purple { background: #8B6FA0; box-shadow: 0 0 8px rgba(139,111,160,0.5); }
+
+.vq-ib-caption-divider {
+  width: 1px;
+  background: rgba(201,168,76,0.16);
+  align-self: stretch;
+}
+
+.vq-ib-caption-heading {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: rgba(242,237,227,0.92);
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.vq-ib-caption-body {
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  color: rgba(200,180,220,0.68);
+  line-height: 1.80;
+}
+
+.vq-ib-caption-body em {
+  color: rgba(242,237,227,0.85);
+  font-style: italic;
+}
+
+.vq-ib-caption-conclusion {
+  font-family: var(--font-ui);
+  font-size: 0.94rem;
+  color: rgba(242,237,227,0.78);
+  line-height: 1.78;
+  margin-top: 32px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(201,168,76,0.14);
+  text-align: center;
+}
+
+.vq-ib-caption-conclusion strong {
+  color: #C9A84C;
+  font-weight: 600;
+}
+
+/* ── RESPONSIVE ── */
+/* Op medium schermen: labels in de SVG verbergen, compact layout */
+@media (max-width: 1200px) {
+  .vq-ib-labels-top,
+  .vq-ib-labels-bottom {
+    display: none;
+  }
+  .vq-ib-size-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .vq-ib-caption-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .vq-ib-caption-divider {
+    display: none;
+  }
+  .vq-ib-waterline-badge {
+    display: none;
+  }
+}
+
+/* ============================================================
+   NIEUW ONTWERP — shimmer, buttons, section utilities
+   ============================================================ */
+
+/* Multi-stop shimmer voor tekst (rijker dan vq-shimmer) */
+.shimmer {
+  background: linear-gradient(110deg,
+    #7A5C18 0%, #C9A84C 12%, #CCA840 24%, #E4B84E 34%,
+    #CCA840 46%, #C9A84C 58%, #D8BE7E 70%, #C9A84C 82%, #7A5C18 100%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: shimmer 5s linear infinite;
+}
+.shimmer-slow {
+  background: linear-gradient(110deg,
+    #7A5C18 0%, #C9A84C 12%, #CCA840 24%, #E4B84E 34%,
+    #CCA840 46%, #C9A84C 58%, #D8BE7E 70%, #C9A84C 82%, #7A5C18 100%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: shimmer-slow 8s linear infinite;
+}
+.shimmer-logo {
+  background: linear-gradient(110deg,
+    #7A5C18 0%, #C9A84C 13%, #E4B84E 24%, #F5E898 34%,
+    #E4B84E 44%, #C9A84C 58%, #D8BE7E 72%, #C9A84C 86%, #7A5C18 100%
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+@keyframes shimmer { 0%{background-position:0% center} 100%{background-position:300% center} }
+@keyframes shimmer-slow { 0%{background-position:0% center} 100%{background-position:300% center} }
+@keyframes shimmer-bg { 0%{background-position:0% center} 100%{background-position:300% center} }
+
+/* Gouden buttons */
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  font-family: var(--font-ui);
+  font-size: 0.935rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  color: #18090D;
+  background: linear-gradient(110deg,
+    #6B5015 0%, #C9A84C 14%, #E4B84E 26%, #F5E898 36%,
+    #E4B84E 46%, #C9A84C 60%, #D8BE7E 74%, #C9A84C 88%, #6B5015 100%
+  );
+  background-size: 300% auto;
+  animation: shimmer-bg 3.2s linear infinite;
+  transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s ease;
+  text-decoration: none;
+}
+.btn-gold:hover {
+  animation: shimmer-bg 1.6s linear infinite;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px -6px rgba(201,168,76,0.55), 0 0 24px rgba(243,226,176,0.22);
+}
+.btn-ghost-dk {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  font-family: var(--font-ui);
+  font-size: 0.935rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  color: #D8BE7E;
+  border: 1px solid rgba(201,168,76,0.45);
+  animation: border-glow-anim 3.5s ease-in-out infinite;
+  transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+  text-decoration: none;
+}
+.btn-ghost-dk:hover {
+  border-color: rgba(243,226,176,0.80);
+  color: #E4B84E;
+  background: rgba(201,168,76,0.08);
+  box-shadow: 0 0 22px rgba(201,168,76,0.22);
+}
+.btn-ghost-lt {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  font-family: var(--font-ui);
+  font-size: 0.935rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  color: #1A0525;
+  border: 1px solid rgba(26,5,37,0.22);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  text-decoration: none;
+}
+.btn-ghost-lt:hover { border-color: #C9A84C; box-shadow: 0 0 16px rgba(201,168,76,0.18); }
+.btn-arrow { transition: transform 0.25s ease; display: inline-block; }
+a:hover .btn-arrow, button:hover .btn-arrow { transform: translateX(4px); }
+
+/* Animaties */
+@keyframes border-glow-anim {
+  0%,100% { box-shadow: 0 0 0 1px rgba(201,168,76,0.28), 0 0 8px rgba(201,168,76,0.08); }
+  50%      { box-shadow: 0 0 0 1px rgba(243,226,176,0.65), 0 0 18px rgba(201,168,76,0.28); }
+}
+@keyframes glow-pulse {
+  0%,100% { filter: drop-shadow(0 0 3px rgba(201,168,76,0.45)); }
+  50%      { filter: drop-shadow(0 0 10px rgba(243,226,176,0.85)) drop-shadow(0 0 22px rgba(201,168,76,0.40)); }
+}
+@keyframes scroll-line {
+  0%,100% { opacity:0.3; transform:scaleY(0.6); }
+  50%     { opacity:1; transform:scaleY(1); }
+}
+@keyframes orb-a { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-40px,30px) scale(1.08)} }
+@keyframes orb-b { 0%,100%{transform:translate(0,0) scale(1.04)} 50%{transform:translate(30px,-20px) scale(0.94)} }
+@keyframes orb-c { 0%,100%{transform:translate(0,0)} 50%{transform:translate(20px,-30px)} }
+
+/* ============================================================
+   GLASS / DEPTH UTILITIES
+   ============================================================ */
+
+/* Premium glass card — solid fallback voor browsers zonder backdrop-filter */
+.vq-glass {
+  background: rgba(30, 8, 42, 0.88);
+  border: 1px solid rgba(201, 168, 76, 0.14);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .vq-glass {
+    background: rgba(255, 255, 255, 0.030);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  }
+}
+
+/* Subtiele diepte op lichte secties */
+.vq-glass-lt {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 3, 24, 0.06);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .vq-glass-lt {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+}
+
+/* Highlighted transformatie kolom (de "na" kant) */
+.vq-glass-gold {
+  background: rgba(201, 168, 76, 0.12);
+  border: 1px solid rgba(201, 168, 76, 0.22);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .vq-glass-gold {
+    background: rgba(201, 168, 76, 0.055);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
+/* Full-bleed section glow overlay */
+.vq-section-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 168, 76, 0.07) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================================
+   TOUCH TARGET HELPERS
+   ============================================================ */
+
+/* Minimum 44px touch target zonder visuele vergroting */
+.touch-target {
+  position: relative;
+}
+.touch-target::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+
+/* .reveal.visible als alias voor is-visible */
+.reveal.visible { opacity: 1; transform: none; }
+.reveal-d1 { transition-delay: 0.08s; }
+.reveal-d2 { transition-delay: 0.16s; }
+.reveal-d3 { transition-delay: 0.24s; }
+.reveal-d4 { transition-delay: 0.32s; }
+
+/* Strip */
+.strip-item {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  background: linear-gradient(110deg, #C9A84C 0%, #CCA840 28%, #E4B84E 40%, #C9A84C 58%, #D8BE7E 75%, #C9A84C 100%);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-slow 7s linear infinite;
+}
+
+/* Doelgroep card icon glow */
+.icon-glow { animation: border-glow-anim 3.5s ease-in-out infinite; }
+
+/* ── PRINT (rapport pagina's) ──────────────────────────────────────── */
+@media print {
+  /* Verberg navigatie, footer, animaties, cursor */
+  header, footer, .vq-skip, .cursor-dot, .cursor-ring { display: none !important; }
+
+  /* Rapport-specifieke elementen verbergen */
+  .rapport-print-hide, .rapport-upsell { display: none !important; }
+
+  /* Witte achtergrond, zwarte tekst voor printer */
+  body { background: #fff !important; color: #0F0318 !important; }
+
+  /* Paginabreuk voorkomen in secties */
+  section, .rapport-section { page-break-inside: avoid; }
+
+  /* Goud bewaren als print-kleur (sommige printers) */
+  @page { margin: 20mm 18mm; }
+}
+.icon-glow svg { animation: glow-pulse 3.5s ease-in-out infinite; }
