@@ -5,12 +5,6 @@
   "functions": {
     "src/app/api/stripe/webhook/route.ts": {
       "maxDuration": 30
-    },
-    "src/app/api/mollie/webhook/route.ts": {
-      "maxDuration": 30
-    },
-    "src/app/api/checkout/route.ts": {
-      "maxDuration": 60
     }
   },
   "headers": [
