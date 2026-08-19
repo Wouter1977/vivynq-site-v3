@@ -59,8 +59,8 @@ export async function submitLead(_prev: ActionState, formData: FormData): Promis
 
 /**
  * Koop-/start-actie voor een product. Legt de bestelling vast en stuurt door:
- *  - Stripe actief + betaald product → naar Stripe Checkout.
- *  - Stripe inactief (testmodus)     → bestelling genoteerd; scanproduct wordt
+ *  - Mollie actief + betaald product → naar Mollie Checkout.
+ *  - Mollie inactief (testmodus)     → bestelling genoteerd; scanproduct wordt
  *    alvast bij de vivynq-app klaargezet zodat de koppeling end-to-end te testen
  *    is. /bedankt toont de status + (in testmodus) de scanlink.
  */
@@ -155,12 +155,13 @@ export async function startProduct(slug: string, _prev: ActionState, formData: F
   const isPaid = product.priceCents > 0;
   const isRecurring = product.fulfillment === "subscription";
 
-  // Betaalde producten met Stripe actief worden gevuld via de webhook
-  // (checkout.session.completed). Alleen in testmodus (Stripe uit) direct provisionen.
-  const willUsePaidStripe = isPaid && paymentsConfigured();
+  // Betaalde producten met Mollie actief worden gevuld via de webhook zodra
+  // Mollie de betaling als "paid" bevestigt. Alleen in testmodus (Mollie uit)
+  // direct provisionen.
+  const willUsePaidMollie = isPaid && paymentsConfigured();
 
   // Scanproduct → alleen in testmodus direct klaarzetten.
-  if (product.fulfillment === "scan" && !willUsePaidStripe) {
+  if (product.fulfillment === "scan" && !willUsePaidMollie) {
     const prov = await provisionScan(
       { first_name, last_name, email },
       product.scanType ?? "persoonlijk"
@@ -172,19 +173,19 @@ export async function startProduct(slug: string, _prev: ActionState, formData: F
   }
 
   // Programmaproduct → alleen in testmodus direct toegang verlenen.
-  if (product.fulfillment === "program" && !willUsePaidStripe) {
+  if (product.fulfillment === "program" && !willUsePaidMollie) {
     await provisionProgram({ first_name, last_name, email }, product.slug);
     await supabase.from("orders").update({ status: "fulfilled" }).eq("id", orderId);
   }
 
   // Abonnement → alleen in testmodus direct activeren.
-  if (product.fulfillment === "subscription" && !willUsePaidStripe) {
+  if (product.fulfillment === "subscription" && !willUsePaidMollie) {
     await provisionSubscription({ first_name, last_name, email }, product.priceCents);
     await supabase.from("orders").update({ status: "fulfilled" }).eq("id", orderId);
   }
 
-  // Betaald product met actieve Stripe → naar Stripe Checkout.
-  // Fulfillment vindt plaats via /api/webhooks/stripe na bevestiging van betaling.
+  // Betaald product met actieve Mollie → naar Mollie Checkout.
+  // Fulfillment vindt plaats via /api/mollie/webhook na bevestiging van betaling.
   if (isPaid && paymentsConfigured()) {
     const checkout = await createCheckoutSession({
       orderId,
@@ -201,7 +202,7 @@ export async function startProduct(slug: string, _prev: ActionState, formData: F
     if (checkout.url) {
       await supabase
         .from("orders")
-        .update({ payment_provider: "stripe", status: "awaiting_payment" })
+        .update({ payment_provider: "mollie", status: "awaiting_payment" })
         .eq("id", orderId);
       redirect(checkout.url);
     }
