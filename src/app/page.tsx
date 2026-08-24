@@ -14,32 +14,61 @@ function IcebergSvg() {
         <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#1A0525"/><stop offset="100%" stopColor="#0D011A"/>
         </linearGradient>
-        <linearGradient id="iceTop" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#CCA840"/><stop offset="100%" stopColor="#C9A84C" stopOpacity="0.8"/>
+        <linearGradient id="iceTop" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0%" stopColor="#F3E2B0"/><stop offset="45%" stopColor="#CCA840"/><stop offset="100%" stopColor="#8B6F2E" stopOpacity="0.9"/>
         </linearGradient>
-        <linearGradient id="iceBot" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#8B6FA0" stopOpacity="0.6"/><stop offset="100%" stopColor="#4A2860" stopOpacity="0.85"/>
+        <linearGradient id="iceBot" x1="0.15" y1="0" x2="0.85" y2="1">
+          <stop offset="0%" stopColor="#8B6FA0" stopOpacity="0.65"/><stop offset="55%" stopColor="#4A2860" stopOpacity="0.80"/><stop offset="100%" stopColor="#1A0525" stopOpacity="0.92"/>
         </linearGradient>
+        <radialGradient id="depthGlow" cx="0.5" cy="0.3" r="0.7">
+          <stop offset="0%" stopColor="#8B6FA0" stopOpacity="0.20"/>
+          <stop offset="100%" stopColor="#8B6FA0" stopOpacity="0"/>
+        </radialGradient>
         <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <filter id="softBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
       </defs>
+
+      {/* Achtergrond */}
       <rect width="400" height="230" fill="url(#skyGrad)" rx="12"/>
       <rect y="218" width="400" height="302" fill="url(#waterGrad)"/>
+
+      {/* Diepteglans onder de ijsberg — suggereert hoeveel groter het is dan wat je ziet */}
+      <ellipse cx="160" cy="345" rx="150" ry="125" fill="url(#depthGlow)" filter="url(#softBlur)"/>
+
+      {/* Onderwater massa — breder en organischer dan de punt erboven */}
+      <path d="M120 228 L85 250 L58 292 L52 340 L68 385 L102 420 L140 445 L175 455 L208 446 L238 422 L255 388 L262 340 L254 292 L228 250 L200 228 Z" fill="url(#iceBot)"/>
+      <path d="M120 228 L90 265 L65 310 L58 355 L75 395" stroke="rgba(200,180,220,0.22)" strokeWidth="0.8" fill="none"/>
+      <path d="M200 228 L222 270 L238 315 L232 360 L212 398" stroke="rgba(139,111,160,0.22)" strokeWidth="0.8" fill="none"/>
+      <path d="M160 455 L160 300" stroke="rgba(139,111,160,0.15)" strokeWidth="0.8" fill="none"/>
+
+      {/* Boven water — ruwe, asymmetrische ijspiek met facetten */}
+      <path d="M120 228 L128 168 L142 184 L154 118 L165 66 L178 132 L190 108 L198 172 L200 228 Z" fill="url(#iceTop)"/>
+      <path d="M165 66 L128 168 L120 228 L142 184 Z" fill="#FAF3DC" opacity="0.22"/>
+      <path d="M165 66 L198 172 L190 108 Z" fill="#3D2A0A" opacity="0.16"/>
+      <path d="M165 66 L142 184" stroke="rgba(255,255,255,0.30)" strokeWidth="0.8" fill="none"/>
+      <path d="M165 66 L190 108 L198 172" stroke="rgba(90,65,10,0.35)" strokeWidth="0.8" fill="none"/>
+
+      {/* Waterlijn */}
       <line x1="0" y1="228" x2="400" y2="228" stroke="#C9A84C" strokeWidth="1.5" opacity="0.7" filter="url(#glow)"/>
-      <path d="M160 220 L200 80 L240 220 Z" fill="url(#iceTop)" opacity="0.92"/>
-      <path d="M160 220 L185 155 L200 80" stroke="rgba(255,255,255,0.20)" strokeWidth="0.8" fill="none"/>
-      <path d="M200 80 L215 155 L240 220" stroke="rgba(255,255,255,0.12)" strokeWidth="0.8" fill="none"/>
-      <path d="M160 228 L115 340 L135 430 L200 480 L265 430 L285 340 L240 228 Z" fill="url(#iceBot)" opacity="0.80"/>
-      <path d="M160 228 L130 330 L200 480" stroke="rgba(139,111,160,0.30)" strokeWidth="0.8" fill="none"/>
-      <path d="M240 228 L270 330 L200 480" stroke="rgba(139,111,160,0.20)" strokeWidth="0.8" fill="none"/>
       <path d="M0 228 Q50 220 100 228 Q150 236 200 228 Q250 220 300 228 Q350 236 400 228" stroke="rgba(201,168,76,0.50)" strokeWidth="1.2" fill="none"/>
+
+      {/* Spiegeling in het water */}
+      <path d="M120 233 L128 245 L142 239 L154 253 L165 261 L178 251 L190 255 L198 241 L200 233" stroke="rgba(201,168,76,0.35)" strokeWidth="2" fill="none" filter="url(#softBlur)"/>
+
+      {/* Zwevende ijsdeeltjes */}
+      <circle cx="62" cy="118" r="2" fill="#F3E2B0" opacity="0.55"/>
+      <circle cx="256" cy="92" r="1.6" fill="#F3E2B0" opacity="0.40"/>
+      <circle cx="44" cy="170" r="1.3" fill="#F3E2B0" opacity="0.35"/>
+
+      {/* Labels */}
       <text x="280" y="165" fontFamily="Manrope,sans-serif" fontSize="9" fontWeight="700" letterSpacing="3" fill="rgba(201,168,76,0.85)" textAnchor="start">DISC</text>
-      <line x1="244" y1="162" x2="275" y2="162" stroke="rgba(201,168,76,0.40)" strokeWidth="0.8"/>
+      <line x1="197" y1="162" x2="275" y2="162" stroke="rgba(201,168,76,0.40)" strokeWidth="0.8"/>
       <text x="280" y="176" fontFamily="Manrope,sans-serif" fontSize="7.5" fill="rgba(242,237,227,0.55)" textAnchor="start">boven de waterlijn</text>
       <text x="290" y="355" fontFamily="Manrope,sans-serif" fontSize="9" fontWeight="700" letterSpacing="2.5" fill="rgba(139,111,160,0.85)" textAnchor="start">SYSTEMISCH</text>
       <line x1="260" y1="352" x2="286" y2="352" stroke="rgba(139,111,160,0.35)" strokeWidth="0.8"/>
       <text x="290" y="367" fontFamily="Manrope,sans-serif" fontSize="7.5" fill="rgba(200,180,220,0.45)" textAnchor="start">onder de waterlijn</text>
-      <rect x="130" y="221" width="140" height="14" rx="3" fill="rgba(15,3,24,0.80)"/>
-      <text x="200" y="231" fontFamily="Manrope,sans-serif" fontSize="6" fontWeight="700" letterSpacing="3" fill="rgba(201,168,76,0.70)" textAnchor="middle">WATERLIJN</text>
+      <rect x="90" y="221" width="140" height="14" rx="3" fill="rgba(15,3,24,0.80)"/>
+      <text x="160" y="231" fontFamily="Manrope,sans-serif" fontSize="6" fontWeight="700" letterSpacing="3" fill="rgba(201,168,76,0.70)" textAnchor="middle">WATERLIJN</text>
     </svg>
   );
 }
@@ -160,7 +189,7 @@ export default function HomePage() {
       {/* ── METHODE ───────────────────────────────────── */}
       <section id="methode" aria-labelledby="methode-title" style={{ background: "#FAF8F2", padding: "96px 0", borderTop: "1px solid rgba(26,5,37,0.06)" }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "64px", alignItems: "center" }}>
+          <div className="grid grid-cols-1 md:grid-cols-2" style={{ gap: "48px", alignItems: "center" }}>
             <Reveal><IcebergSvg /></Reveal>
             <div>
               <Reveal><p className="font-ui" style={{ fontSize: "0.78rem", fontWeight: 700, letterSpacing: "0.20em", textTransform: "uppercase", color: "rgba(26,5,37,0.62)", marginBottom: "16px" }}>De methodiek</p></Reveal>
@@ -170,7 +199,7 @@ export default function HomePage() {
                 <p className="font-ui" style={{ fontSize: "0.92rem", lineHeight: 1.72, color: "rgba(26,5,37,0.65)" }}>Vivynq werkt op beide lagen tegelijk. Dat is wat het onderscheid maakt.</p>
               </Reveal>
               <Reveal delay={240}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginTop: "40px" }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: "24px", marginTop: "40px" }}>
                   <div style={{ padding: "24px", borderRadius: "12px", background: "#F5F0E6", border: "1px solid rgba(26,5,37,0.10)" }}>
                     <p className="font-ui shimmer" style={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: "8px" }}>▲ Boven water</p>
                     <h4 className="font-display" style={{ fontSize: "1rem", fontWeight: 500, color: "#1A0525", marginBottom: "8px" }}>DISC</h4>
