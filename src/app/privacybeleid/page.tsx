@@ -79,7 +79,7 @@ export default function PrivacybeleidPage() {
             </tr>
             <tr>
               <td className="font-body" style={TABLE_CELL}>Betalingsgegevens</td>
-              <td className="font-body" style={TABLE_CELL}>Transactie-ID, betaalmethode (via Mollie/Stripe)</td>
+              <td className="font-body" style={TABLE_CELL}>Transactie-ID, betaalmethode (via Mollie)</td>
               <td className="font-body" style={TABLE_CELL}>Uitvoering overeenkomst</td>
             </tr>
             <tr>
@@ -106,7 +106,7 @@ export default function PrivacybeleidPage() {
         <ul style={{ paddingLeft: "20px" }}>
           {[
             "Het leveren van onze diensten (scans, coaching, programma's, meditaties)",
-            "Het verwerken van betalingen via Mollie en Stripe",
+            "Het verwerken van betalingen via Mollie",
             "Het genereren van gepersonaliseerde rapporten met behulp van AI (Anthropic Claude)",
             "Het versturen van transactionele e-mails (bevestigingen, uitnodigingen)",
             "Het verbeteren van onze dienstverlening",
@@ -141,7 +141,6 @@ export default function PrivacybeleidPage() {
               ["Supabase", "Database en authenticatie", "EU (Frankfurt)"],
               ["Anthropic", "AI-rapportgeneratie", "VS (met DPA)"],
               ["Mollie", "Betalingsverwerking", "Nederland"],
-              ["Stripe", "Betalingsverwerking", "EU/VS (met SCC)"],
               ["Vercel", "Hosting", "EU/VS (met DPA)"],
               ["Google Workspace", "E-mailcommunicatie", "EU (met DPA)"],
             ].map(([dienst, doel, locatie]) => (

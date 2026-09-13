@@ -291,7 +291,7 @@ export function CheckoutForm({
       </button>
 
       <p className="font-ui" style={{ fontSize: "0.70rem", color: "rgba(250,248,242,0.65)", lineHeight: 1.55 }}>
-        Veilig afrekenen via iDEAL of creditcard via Stripe. Geen account nodig.
+        Veilig afrekenen via iDEAL of creditcard via Mollie. Geen account nodig.
       </p>
       <p className="font-ui" style={{ fontSize: "0.67rem", color: "rgba(250,248,242,0.48)", lineHeight: 1.60 }}>
         Door te bestellen ga je akkoord met onze{" "}
@@ -299,7 +299,7 @@ export function CheckoutForm({
         {" "}en{" "}
         <a href="/voorwaarden" style={{ color: "#C9A84C", textDecoration: "underline" }}>algemene voorwaarden</a>.
         Jouw gegevens worden uitsluitend verwerkt voor de uitvoering van je bestelling en niet gedeeld
-        met derden, behoudens Stripe (betalingsverwerker).
+        met derden, behoudens Mollie (betalingsverwerker).
       </p>
     </form>
   );

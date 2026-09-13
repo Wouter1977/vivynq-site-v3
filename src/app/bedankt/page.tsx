@@ -112,9 +112,8 @@ export default async function BedanktPage({
             <div style={{ background: "rgba(183,119,13,0.12)", border: "1px solid rgba(183,119,13,0.4)", padding: "16px 18px", textAlign: "left", marginBottom: "24px" }}>
               <p className="font-ui" style={{ fontSize: "0.78rem", color: "#E8C07A", lineHeight: 1.6 }}>
                 <strong>Testmodus.</strong> Online betalen is nog niet geactiveerd, dus
-                deze bestelling is genoteerd zonder betaling. Zodra de Stripe-koppeling
-                live staat, loopt elke koop automatisch via iDEAL of creditcard — zonder
-                verdere aanpassingen.
+                deze bestelling is genoteerd zonder betaling. Zodra de Mollie-koppeling
+                live staat, loopt elke koop automatisch via iDEAL of creditcard.
               </p>
             </div>
           )}

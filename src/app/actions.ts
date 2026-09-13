@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { createAnonClient, createServiceClient } from "@/lib/supabase";
 import { getProduct } from "@/lib/products";
 import { provisionScan, provisionProgram, provisionSubscription } from "@/lib/fulfillment";
-import { createCheckoutSession, paymentsConfigured } from "@/lib/payments";
-import { validateRelatieCode } from "@/lib/relatie-codes";
+import { createMolliePayment, paymentsConfigured } from "@/lib/payments";
+import { applyDiscount, validateRelatieCode } from "@/lib/relatie-codes";
 
 export type ActionState = { error?: string; ok?: boolean };
 
@@ -59,10 +59,12 @@ export async function submitLead(_prev: ActionState, formData: FormData): Promis
 
 /**
  * Koop-/start-actie voor een product. Legt de bestelling vast en stuurt door:
- *  - Stripe actief + betaald product → naar Stripe Checkout.
- *  - Stripe inactief (testmodus)     → bestelling genoteerd; scanproduct wordt
- *    alvast bij de vivynq-app klaargezet zodat de koppeling end-to-end te testen
- *    is. /bedankt toont de status + (in testmodus) de scanlink.
+ *  - Betaald product → altijd eerst naar Mollie. Levering gebeurt uitsluitend in
+ *    /api/webhooks/mollie, nadat de betaling bij Mollie is geverifieerd.
+ *  - Betaald product zonder actieve Mollie-koppeling → in productie wordt de
+ *    bestelling geweigerd. Er wordt nooit stilzwijgend gratis geleverd; buiten
+ *    productie mag dat wel, zodat de keten end-to-end te testen is.
+ *  - Gratis lead-magnet → direct genoteerd.
  */
 export async function startProduct(slug: string, _prev: ActionState, formData: FormData): Promise<ActionState> {
   const product = getProduct(slug);
@@ -131,12 +133,17 @@ export async function startProduct(slug: string, _prev: ActionState, formData: F
 
   const supabase = createServiceClient();
 
+  // Het te betalen bedrag wordt hier één keer bepaald, inclusief eventuele
+  // relatiecodekorting. De webhook vergelijkt het bij Mollie betaalde bedrag
+  // hiermee, dus vastleggen en afrekenen moeten dezelfde waarde gebruiken.
+  const teBetalenCents = applyDiscount(product.priceCents, discountPercent);
+
   const { data: order, error: orderErr } = await supabase
     .from("orders")
     .insert({
       product_slug: product.slug,
       product_name: product.name,
-      amount_cents: product.priceCents,
+      amount_cents: teBetalenCents,
       fulfillment: product.fulfillment,
       status: "pending",
       customer_first_name: first_name,
@@ -145,6 +152,10 @@ export async function startProduct(slug: string, _prev: ActionState, formData: F
       customer_phone: phone || null,
       organization: organization || null,
       message: message || null,
+      // Leg vast waarom het bedrag eventueel afwijkt van de catalogusprijs.
+      metadata: validatedCode
+        ? { relatie_code: validatedCode, discount_percent: discountPercent, list_price_cents: product.priceCents }
+        : {},
     })
     .select("id")
     .single();
@@ -152,60 +163,65 @@ export async function startProduct(slug: string, _prev: ActionState, formData: F
 
   const orderId = order.id as string;
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3300";
-  const isPaid = product.priceCents > 0;
-  const isRecurring = product.fulfillment === "subscription";
+  const isPaid = teBetalenCents > 0;
 
-  // Betaalde producten met Stripe actief worden gevuld via de webhook
-  // (checkout.session.completed). Alleen in testmodus (Stripe uit) direct provisionen.
-  const willUsePaidStripe = isPaid && paymentsConfigured();
+  if (isPaid) {
+    // Betaald product zonder werkende betaalkoppeling wordt in productie
+    // geweigerd. Nooit stilzwijgend gratis leveren omdat een omgevingsvariabele
+    // ontbreekt; buiten productie mag het wel, om de keten te kunnen testen.
+    if (!paymentsConfigured()) {
+      if (process.env.NODE_ENV === "production") {
+        console.error("MOLLIE_API_KEY ontbreekt in productie — bestelling geweigerd.");
+        await supabase.from("orders").update({ status: "payment_unavailable" }).eq("id", orderId);
+        return {
+          error:
+            "Online betalen is op dit moment niet beschikbaar. Probeer het later opnieuw of neem contact op.",
+        };
+      }
 
-  // Scanproduct → alleen in testmodus direct klaarzetten.
-  if (product.fulfillment === "scan" && !willUsePaidStripe) {
-    const prov = await provisionScan(
-      { first_name, last_name, email },
-      product.scanType ?? "persoonlijk"
-    );
-    await supabase
-      .from("orders")
-      .update({ scan_id: prov.scanId, invite_token: prov.token, status: "fulfilled" })
-      .eq("id", orderId);
-  }
+      // Buiten productie: direct klaarzetten zodat de keten end-to-end te testen is.
+      const customer = { first_name, last_name, email };
+      if (product.fulfillment === "scan") {
+        const prov = await provisionScan(customer, product.scanType ?? "persoonlijk");
+        await supabase
+          .from("orders")
+          .update({ scan_id: prov.scanId, invite_token: prov.token, status: "fulfilled" })
+          .eq("id", orderId);
+      } else if (product.fulfillment === "program") {
+        await provisionProgram(customer, product.slug);
+        await supabase.from("orders").update({ status: "fulfilled" }).eq("id", orderId);
+      } else if (product.fulfillment === "subscription") {
+        await provisionSubscription(customer, teBetalenCents);
+        await supabase.from("orders").update({ status: "fulfilled" }).eq("id", orderId);
+      }
+      // Bewust geen redirect hier: de lead- en teamnotificatielogica onderaan
+      // moet ook in deze testsituatie gewoon doorlopen.
+    } else {
+      // Levering gebeurt uitsluitend in de webhook, na verificatie bij Mollie.
+      const betaling = await createMolliePayment({
+        orderId,
+        amountCents: teBetalenCents,
+        description: `${product.name} — VIVYNQ`,
+        customerEmail: email,
+        redirectUrl: `${siteUrl}/bedankt?order=${orderId}`,
+        webhookUrl: `${siteUrl}/api/webhooks/mollie`,
+      });
 
-  // Programmaproduct → alleen in testmodus direct toegang verlenen.
-  if (product.fulfillment === "program" && !willUsePaidStripe) {
-    await provisionProgram({ first_name, last_name, email }, product.slug);
-    await supabase.from("orders").update({ status: "fulfilled" }).eq("id", orderId);
-  }
+      if (!betaling.url) {
+        return { error: betaling.error ?? "Betaling starten lukte niet." };
+      }
 
-  // Abonnement → alleen in testmodus direct activeren.
-  if (product.fulfillment === "subscription" && !willUsePaidStripe) {
-    await provisionSubscription({ first_name, last_name, email }, product.priceCents);
-    await supabase.from("orders").update({ status: "fulfilled" }).eq("id", orderId);
-  }
-
-  // Betaald product met actieve Stripe → naar Stripe Checkout.
-  // Fulfillment vindt plaats via /api/webhooks/stripe na bevestiging van betaling.
-  if (isPaid && paymentsConfigured()) {
-    const checkout = await createCheckoutSession({
-      orderId,
-      amountCents: product.priceCents,
-      productName: product.name,
-      description: product.tagline,
-      customerEmail: email,
-      successUrl: `${siteUrl}/bedankt?order=${orderId}`,
-      cancelUrl: `${siteUrl}/programma/${product.slug}`,
-      recurring: isRecurring,
-      relatieCode: validatedCode,
-      discountPercent,
-    });
-    if (checkout.url) {
       await supabase
         .from("orders")
-        .update({ payment_provider: "stripe", status: "awaiting_payment" })
+        .update({
+          payment_provider: "mollie",
+          payment_id: betaling.paymentId ?? null,
+          status: "awaiting_payment",
+        })
         .eq("id", orderId);
-      redirect(checkout.url);
+
+      redirect(betaling.url);
     }
-    return { error: checkout.error ?? "Betaling starten lukte niet." };
   }
 
   // Gratis lead-magnet → genoteerd.

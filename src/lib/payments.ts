@@ -1,75 +1,95 @@
 import "server-only";
-import Stripe from "stripe";
 
-const stripe = process.env.STRIPE_SECRET_KEY
-  ? new Stripe(process.env.STRIPE_SECRET_KEY)
-  : null;
+/**
+ * Betalingen lopen via Mollie (iDEAL, creditcard), net als in vivynq-app.
+ * Er wordt bewust geen npm-pakket gebruikt: de app spreekt de Mollie REST API
+ * rechtstreeks aan, en die conventie houden we hier aan.
+ */
 
+const MOLLIE_API = "https://api.mollie.com/v2";
+
+/** Mollie is actief zodra de API-sleutel in de omgeving staat. */
 export function paymentsConfigured(): boolean {
-  return !!stripe;
+  return !!process.env.MOLLIE_API_KEY;
 }
 
-export interface CheckoutArgs {
+export interface PaymentArgs {
   orderId: string;
   amountCents: number;
-  productName: string;
   description: string;
   customerEmail?: string;
-  successUrl: string;
-  cancelUrl: string;
-  recurring?: boolean;
-  relatieCode?: string;
-  discountPercent?: number;
+  redirectUrl: string;
+  webhookUrl: string;
 }
 
-export interface CheckoutResult {
-  configured: boolean;
+export interface PaymentResult {
   url?: string;
+  paymentId?: string;
   error?: string;
 }
 
-export async function createCheckoutSession(args: CheckoutArgs): Promise<CheckoutResult> {
-  if (!stripe) {
-    return { configured: false, error: "Online betalen is nog niet geactiveerd." };
-  }
-  if (args.amountCents <= 0) {
-    return { configured: true, error: "Bedrag moet groter dan nul zijn." };
-  }
+export interface MolliePayment {
+  id: string;
+  status: string;
+  amount?: { currency: string; value: string };
+  metadata?: { order_id?: string } | null;
+}
 
-  const finalAmount =
-    args.discountPercent && args.discountPercent > 0
-      ? Math.round(args.amountCents * (1 - args.discountPercent / 100))
-      : args.amountCents;
+/** Maakt een Mollie-betaling aan en geeft de checkout-URL terug. */
+export async function createMolliePayment(args: PaymentArgs): Promise<PaymentResult> {
+  const key = process.env.MOLLIE_API_KEY;
+  if (!key) return { error: "Online betalen is niet geactiveerd." };
+  if (args.amountCents <= 0) return { error: "Bedrag moet groter dan nul zijn." };
 
   try {
-    const session = await stripe.checkout.sessions.create({
-      mode: args.recurring ? "subscription" : "payment",
-      payment_method_types: ["ideal", "card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "eur",
-            product_data: { name: args.productName, description: args.description.slice(0, 500) },
-            unit_amount: finalAmount,
-            ...(args.recurring ? { recurring: { interval: "month" as const } } : {}),
-          },
-          quantity: 1,
-        },
-      ],
-      customer_email: args.customerEmail || undefined,
-      success_url: args.successUrl,
-      cancel_url: args.cancelUrl,
-      metadata: {
-        order_id: args.orderId,
-        ...(args.relatieCode ? { relatie_code: args.relatieCode, discount_percent: String(args.discountPercent ?? 0) } : {}),
+    const res = await fetch(`${MOLLIE_API}/payments`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
       },
-      locale: "nl",
+      body: JSON.stringify({
+        amount: { currency: "EUR", value: (args.amountCents / 100).toFixed(2) },
+        description: args.description.slice(0, 255) || "VIVYNQ",
+        redirectUrl: args.redirectUrl,
+        webhookUrl: args.webhookUrl,
+        billingEmail: args.customerEmail || undefined,
+        metadata: { order_id: args.orderId },
+        locale: "nl_NL",
+      }),
     });
 
-    return { configured: true, url: session.url ?? undefined };
+    const data = await res.json();
+    if (!res.ok) {
+      // Nooit de ruwe providerfout naar de browser sturen.
+      console.error("Mollie: betaling aanmaken mislukt", data);
+      return { error: "Betaling starten lukte niet. Probeer het later opnieuw." };
+    }
+
+    return { url: data?._links?.checkout?.href, paymentId: data?.id };
   } catch (e) {
-    return { configured: true, error: e instanceof Error ? e.message : "Betaalfout." };
+    console.error("Mollie: betaling aanmaken mislukt", e);
+    return { error: "Betaling starten lukte niet. Probeer het later opnieuw." };
   }
 }
 
-export { stripe };
+/**
+ * Haalt een betaling op bij Mollie. Dit is de kern van de webhookbeveiliging:
+ * de webhook van Mollie bevat alleen een id, dus de status wordt altijd bij de
+ * bron opgehaald en nooit uit het verzoek zelf overgenomen.
+ */
+export async function getMolliePayment(paymentId: string): Promise<MolliePayment | null> {
+  const key = process.env.MOLLIE_API_KEY;
+  if (!key) return null;
+
+  try {
+    const res = await fetch(`${MOLLIE_API}/payments/${encodeURIComponent(paymentId)}`, {
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as MolliePayment;
+  } catch (e) {
+    console.error("Mollie: betaling ophalen mislukt", e);
+    return null;
+  }
+}
