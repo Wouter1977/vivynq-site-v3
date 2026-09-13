@@ -3,7 +3,7 @@
   "framework": "nextjs",
   "regions": ["cdg1"],
   "functions": {
-    "src/app/api/stripe/webhook/route.ts": {
+    "src/app/api/webhooks/mollie/route.ts": {
       "maxDuration": 30
     }
   },

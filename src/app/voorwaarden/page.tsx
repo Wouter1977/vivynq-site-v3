@@ -77,7 +77,7 @@ export default function VoorwaardenPage() {
       <div style={SECTION}>
         <h2 className="font-display" style={H2}>4. Betaling en levering</h2>
         <p className="font-body" style={P}>
-          Betaling van digitale producten geschiedt vooraf via Mollie (iDEAL, creditcard) of Stripe.
+          Betaling van digitale producten geschiedt vooraf via Mollie (iDEAL, creditcard).
           Na succesvolle betaling ontvang je direct toegang tot het product per e-mail. Voor diensten die
           handmatige verwerking vereisen (Systeemanalyse, Begeleidingsplan) geldt levering binnen 1 werkdag.
         </p>

@@ -378,7 +378,7 @@ export default async function ProductPage({ params }: Props) {
                 <p className="font-ui" style={{ fontSize: "0.74rem", color: "rgba(250,248,242,0.36)", lineHeight: 1.6, marginTop: "12px", textAlign: "center" }}>
                   {needsContact
                     ? "Vrijblijvend kennismakingsgesprek — geen verplichtingen"
-                    : "Directe toegang na betaling · Veilig via Stripe"}
+                    : "Directe toegang na betaling · Veilig via Mollie"}
                 </p>
                 {product.urgentie && (
                   <p className="font-ui" style={{ fontSize: "0.70rem", color: "rgba(201,168,76,0.52)", textAlign: "center", marginTop: "8px", letterSpacing: "0.03em" }}>
@@ -458,7 +458,7 @@ export default async function ProductPage({ params }: Props) {
           </Reveal>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { n: "01", t: needsContact ? "Plan een gesprek" : "Kies en reken af", d: needsContact ? "Vul het formulier in en plan een vrijblijvend kennismakingsgesprek." : "Eénmalige betaling via Stripe. Direct en veilig." },
+              { n: "01", t: needsContact ? "Plan een gesprek" : "Kies en reken af", d: needsContact ? "Vul het formulier in en plan een vrijblijvend kennismakingsgesprek." : "Eénmalige betaling via Mollie. Direct en veilig." },
               { n: "02", t: needsContact ? "Kennismakingsgesprek" : "Direct toegang", d: needsContact ? "We verkennen je situatie en stellen het traject op maat samen." : "Je ontvangt direct toegang via de VIVYNQ-app. Op elk apparaat." },
               { n: "03", t: "Start jouw traject", d: "Op jouw tempo, op jouw moment. Met begeleiding als je er om vraagt." },
             ].map((s, i) => (
